@@ -1,0 +1,13 @@
+input_script_prefix:proc.ERwD
+input_participant_list:(ERwD001 ERwD002 ERwD003 ERwD004 ERwD005 ERwD006 ERwD007 ERwD008 ERwD009 ERwD010 ERwD011 ERwD012 ERwD013 ERwD014 ERwD015 ERwD016 ERwD017 ERwD018 ERwD019 ERwD020 ERwD021 ERwD022 ERwD023 ERwD024)
+input_GLM_name:Testing
+input_initial_directory:/Volumes/Pegasus/Anderson/ERwD
+input_number_runs:9
+input_number_TRs:314
+input_TR_length:1.1
+input_onsets_folder:onsets/
+input_number_timing_files:4
+input_timing_file_01:"$subj"_Retrieval_Long_Hit_AllConf.txt
+input_timing_file_02:"$subj"_Retrieval_Long_Miss_AllConf.txt
+input_timing_file_03:"$subj"_Retrieval_Long_CR_AllConf.txt
+input_timing_file_04:"$subj"_Retrieval_Long_FA_AllConf.txt

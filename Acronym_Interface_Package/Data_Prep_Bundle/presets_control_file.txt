@@ -1,0 +1,16 @@
+project_name:NP1029
+number_of_sessions:2
+id_prefix:erwd
+task_code:ERwD
+folder:/users/nathananderson/Desktop/Processing_Testing
+icarus_folder:/data/nil-external/mcl/Anderson/
+raw_behavioral_folder:/users/nathananderson/Desktop/Processing_Testing/All_Raw_Data
+CNDA_auto:True
+use_participant_spreadsheet:True
+participant_spreadsheet:/users/nathananderson/Desktop/Processing_Testing/participant_spreadsheet.csv
+CNDA_login:andersonn
+CNDA_password:Mnemosyne99
+icarus_login:andersonn
+icarus_password:@99Mnemosyne
+show_notifications:True
+password_save:True

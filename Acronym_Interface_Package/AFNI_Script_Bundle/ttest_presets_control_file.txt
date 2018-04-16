@@ -1,0 +1,12 @@
+Dset_prefix:BothShort_Hit_Encoding-Retrieval
+Subj_results_directory:/Volumes/Pegasus/Anderson/ERwD/subject_results
+Participants:ERwD001 ERwD002 ERwD003 ERwD005 ERwD006 ERwD007 ERwD008 ERwD009 ERwD010 ERwD011 ERwD012 ERwD013 ERwD014 ERwD015 ERwD016 ERwD018 ERwD020 ERwD021 ERwD022 ERwD023
+A_folder:Encoding_BothShort
+A_labelname:Hit
+A_label:EncodingSubsequent_BothShort_Hit#0_Coef
+B_folder:Retrieval_BothShort
+B_labelname:Hit
+B_label:Retrieval_BothShort_Hit#0_Coef
+Paired_ttest:True
+Contrast_against_baseline:False
+Auto_filename:master_ttest_1
