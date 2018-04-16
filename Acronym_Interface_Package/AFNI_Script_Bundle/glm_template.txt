@@ -1,0 +1,343 @@
+#!/bin/tcsh -xef
+
+# execute via :
+#   tcsh -xef $$%%script_name%%$$ |& tee output.$$%%script_name%%$$
+
+echo "(version 4.67, June 16, 2016)"
+echo "execution started: `date`"
+
+####################################################################################################
+# ***NOTE***
+# This script is meant to accompany a preprocessing script. This computes individual GLMs from preprocessed data
+# The folders and setup in this script must match the preprocessing script you used exactly. Please refer to your setup of that script.
+# Notes have been made where exact matches are critical ("!!! Identical !!!")
+####################################################################################################
+
+
+
+
+
+$$%%subj_number_block%%$$
+
+
+echo $subj_number
+
+##################################################
+# ***CHANGE***
+# !!! Identical !!!
+# This is is the initial directory where all analyses will be saved.
+set main_directory='$$%%main_dir%%$$'
+cd main_directory
+##################################################
+
+# cd $subj_number
+
+cd subject_results
+
+# cd group.ERwD
+cd subj.$subj_number
+
+
+# =========================== auto block: setup ============================
+# script setup
+
+# take note of the AFNI version
+afni -ver
+
+# check that the current AFNI version is recent enough
+afni_history -check_date 28 Oct 2015
+if ( $status ) then
+echo "** this script requires newer AFNI binaries (than 28 Oct 2015)"
+echo "   (consider: @update.afni.binaries -defaults)"
+exit
+endif
+
+# the user may specify a single subject to run with
+if ( $#argv > 0 ) then
+set subj = $argv[1]
+else
+set subj = $subj_number
+endif
+
+# assign output directory name
+set subj_dir = $subj.results
+
+
+
+
+##################################################
+# ***CHANGE***
+
+# !!! Identical to "input_dir" !!!
+# This is the directory where each individual subject's data is kept (updates for each participant loop)
+set stim_dir='$$%%main_dir%%$$/'"$subj"
+
+# This is the name of the GLM you want to run - a folder will be created for it
+set glm_dir='$$%%GLM_folder%%$$'
+##################################################
+
+
+
+
+# verify that the results directory does not yet exist
+if ( -d $subj_dir/$glm_dir ) then
+echo output dir "$glm_dir" already exists
+exit
+endif
+
+# create results and stimuli directories
+mkdir $subj_dir/$glm_dir
+mkdir $subj_dir/$glm_dir/stimuli
+
+
+
+##################################################
+# ***CHANGE***
+
+
+#####
+# These are your stimuli:
+
+# This is the total number of stimulus files you are including + 6 (includes, x/y/z/yaw/pitch/roll)
+set num_stimts='$$%%num_stimts%%$$'
+
+# Stimuli file names
+$$%%stim_block%%$$
+
+# Stimuli label names
+$$%%stim_name_block%%$$
+
+# GLTs (contrasts) must be changed in the 3dDeconvolve block below. "gltsym" cannot be pre-set as a variable.
+
+
+# set list of runs
+set runs = (`count -digits 2 1 $$%%run_number%%$$`) # the final digit is your number of runs (2 1 6 reads: 2 digit numbers, 1 through 6)
+set nruns='$$%%run_number%%$$' # This is the number of runs in your dataset
+
+# copy stim files into stimulus directory
+# Make sure that the number of lines here is equal to your number of stimulus files
+cp                                       \
+$$%%stim_copy_block%%$$
+$subj_dir/$glm_dir/stimuli
+
+# ***END CHANGES***
+##################################################
+
+
+
+
+
+# -------------------------------------------------------
+# enter the results directory (can begin processing data)
+cd $subj_dir
+
+set rundata = "pb05.$subj.r*.scale+tlrc.HEAD"
+cat $subj.dfile.r*.1D > $glm_dir/$subj.dfile_rall.1D
+# make a single file of registration params
+
+# catenate outlier counts into a single time series
+cat outcount.r*.1D > outcount_rall.1D
+
+# create 'full_mask' dataset (union mask)
+cp full_mask* $glm_dir
+
+# if ( -f _final.$subj+tlrc.HEAD ) then
+# rm anat_final.$subj+tlrc.HEAD
+# endif
+# if ( -f anat_final.$subj+tlrc.BRIK ) then
+# rm anat_final.$subj+tlrc.BRIK
+# endif
+# create an anat_final dataset, aligned with stats
+# 3dcopy anat_mprage_ns+tlrc $glm_dir/anat_final.$subj
+3dcopy anat_final."$subj"+tlrc $glm_dir/anat_final.$subj
+
+
+# ================================ regress =================================
+cd $glm_dir
+
+# compute de-meaned motion parameters (for use in regression)
+1d_tool.py -infile $subj.dfile_rall.1D -set_nruns $nruns                                \
+  -demean -write motion_demean.1D
+
+# compute motion parameter derivatives (for use in regression)
+1d_tool.py -infile $subj.dfile_rall.1D -set_nruns $nruns                                \
+  -derivative -demean -write motion_deriv.1D
+
+# create censor file motion_${subj}_censor.1D, for censoring motion
+1d_tool.py -infile $subj.dfile_rall.1D -set_nruns $nruns                                \
+-show_censor_count -censor_prev_TR                                       \
+-censor_motion 0.3 motion_${subj}
+
+# note TRs that were not censored
+set ktrs = `1d_tool.py -infile motion_${subj}_censor.1D                      \
+  -show_trs_uncensored encoded`
+
+cd ..
+
+##################################################
+# ***CHANGE***
+# This section must be changed to match the above section.
+# Primarily, you need to make sure that the number/names of both stimulus files and glts are the same as above
+
+# run the regression analysis
+
+3dDeconvolve -input pb05.$subj.r*.scale+tlrc.HEAD                                 \
+-censor $glm_dir/motion_${subj}_censor.1D                                         \
+-polort $$%%polort_number%%$$                                                                         \
+-num_stimts $num_stimts                                                           \
+$$%%deconvolve_block%%$$
+-fout -tout -x1D $glm_dir/X.xmat.1D -xjpeg X.jpg                                  \
+-x1D_uncensored $glm_dir/X.nocensor.xmat.1D                                       \
+-$glm_dir/fitts.$subj                                                       \
+-errts $glm_dir/errts.${subj}                                                     \
+-bucket $glm_dir/stats.$subj
+
+ # ***END CHANGES***
+ ##################################################
+
+
+# if 3dDeconvolve fails, terminate the script
+if ( $status != 0 ) then
+echo '---------------------------------------'
+echo '** 3dDeconvolve error, failing...'
+echo '   (consider the file 3dDeconvolve.err)'
+exit
+endif
+
+# create an all_runs dataset to match the fitts, errts, etc.
+3dTcat -prefix all_runs.$subj -session $glm_dir pb05.$subj.r*.scale+tlrc.HEAD
+
+cd $glm_dir
+
+# display any large pairwise correlations from the X-matrix
+1d_tool.py -show_cormat_warnings -infile X.xmat.1D |& tee out.cormat_warn.txt
+
+
+# --------------------------------------------------
+# create a temporal signal to noise ratio dataset
+#    signal: if 'scale' block, mean should be 100
+#    noise : compute standard deviation of errts
+3dTstat -mean -prefix rm.signal.all all_runs.$subj+tlrc"[$ktrs]"
+3dTstat -stdev -prefix rm.noise.all errts.${subj}+tlrc"[$ktrs]"
+3dcalc -a rm.signal.all+tlrc                                                 \
+  -b rm.noise.all+tlrc                                                  \
+  -c full_mask.$subj+tlrc                                               \
+  -expr 'c*a/b' -prefix TSNR.$subj
+
+# ---------------------------------------------------
+# compute and store GCOR (global correlation average)
+# (sum of squares of global mean of unit errts)
+3dTnorm -norm2 -prefix rm.errts.unit errts.${subj}+tlrc
+3dmaskave -quiet -mask full_mask.$subj+tlrc rm.errts.unit+tlrc               \
+ > gmean.errts.unit.1D
+3dTstat -sos -prefix - gmean.errts.unit.1D\' > out.gcor.1D
+echo "-- GCOR = `cat out.gcor.1D`"
+
+# ---------------------------------------------------
+# compute correlation volume
+# (per voxel: average correlation across masked brain)
+# (now just dot product with average unit time series)
+3dcalc -a rm.errts.unit+tlrc -b gmean.errts.unit.1D -expr 'a*b' -prefix rm.DP
+3dTstat -sum -prefix corr_brain rm.DP+tlrc
+
+## create ideal files for fixed response stim types
+$$%%ideals_block%%$$
+
+
+# --------------------------------------------------------
+# compute sum of non-baseline regressors from the X-matrix
+# (use 1d_tool.py to get list of regressor colums)
+set reg_cols = `1d_tool.py -infile X.nocensor.xmat.1D -show_indices_interest`
+3dTstat -sum -prefix sum_ideal.1D X.nocensor.xmat.1D"[$reg_cols]"
+
+# also, create a stimulus-only X-matrix, for easy review
+1dcat X.nocensor.xmat.1D"[$reg_cols]" > X.stim.xmat.1D
+
+# ============================ blur estimation =============================
+# compute blur estimates
+touch blur_est.$subj.1D   # start with empty file
+
+# -- estimate blur for each run in epits --
+touch blur.epits.1D
+
+# restrict to uncensored TRs, per run
+foreach run ( $runs )
+set trs = `1d_tool.py -infile X.xmat.1D -show_trs_uncensored encoded     \
+ -show_trs_run $run`
+if ( $trs == "" ) continue
+3dFWHMx -detrend -mask full_mask.$subj+tlrc                              \
+all_runs.$subj+tlrc"[$trs]" >> blur.epits.1D
+end
+
+# compute average blur and append
+set blurs = ( `3dTstat -mean -prefix - blur.epits.1D\'` )
+echo average epits blurs: $blurs
+echo "$blurs   # epits blur estimates" >> blur_est.$subj.1D
+
+# -- estimate blur for each run in errts --
+touch blur.errts.1D
+
+# restrict to uncensored TRs, per run
+foreach run ( $runs )
+set trs = `1d_tool.py -infile X.xmat.1D -show_trs_uncensored encoded     \
+ -show_trs_run $run`
+if ( $trs == "" ) continue
+3dFWHMx -detrend -mask full_mask.$subj+tlrc                              \
+errts.${subj}+tlrc"[$trs]" >> blur.errts.1D
+end
+
+# compute average blur and append
+set blurs = ( `3dTstat -mean -prefix - blur.errts.1D\'` )
+echo average errts blurs: $blurs
+echo "$blurs   # errts blur estimates" >> blur_est.$subj.1D
+
+## add 3dClustSim results as attributes to any stats dset
+#set fxyz = ( `tail -1 blur_est.$subj.1D` )
+#3dClustSim -both -mask full_mask.$subj+tlrc -fwhmxyz $fxyz[1-3]              \
+#  -prefix ClustSim
+#set cmd = ( `cat 3dClustSim.cmd` )
+#$cmd stats.$subj+tlrc
+
+
+# ================== auto block: generate review scripts ===================
+
+#cd ..
+#
+#gen_ss_review_scripts.py -mot_limit 0.3 -exit0                        \
+#    -out_limit 0.1                                                    \
+#    -uvar xmat_uncensored "$glm_dir"/X.nocensor.xmat.1D           \
+#    -uvar stats_dset "$glm_dir"/stats."$subj"+tlrc.HEAD           \
+#    -motion_dset "$subj".dfile_rall.1D                                \
+#    -uvar sum_ideal "$glm_dir"/sum_ideal.1D                       \
+#    -uvar errts_dset "$glm_dir"/errts."$subj"+tlrc.HEAD           \
+#    -uvar tsnr_dset "$glm_dir"/TSNR."$subj"+tlrc.HEAD             \
+#    -uvar gcor_dset "$glm_dir"/out.gcor.1D                        \
+#    -xmat_regress X.xmat.1D                                           \
+#    -censor_dset motion_"$subj"_censor.1D
+#
+#
+#mv @ss_review_basic @ss_review_basic_"$glm_dir"
+#mv @ss_review_driver @ss_review_driver_"$glm_dir"
+#mv @ss_review_driver_commands @ss_review_driver_commands_"$glm_dir"
+#
+#
+## if the basic subject review script is here, run it
+## (want this to be the last text output)
+#if ( -e @ss_review_basic_"$glm_dir" ) ./@ss_review_basic_"$glm_dir" |& tee out.ss_review."$subj"_"$glm_dir".txt
+#
+#
+#cd $glm_dir
+
+rm -f rm.*
+
+
+# return to parent directory
+
+cd main_directory
+
+
+echo "$subj finished: `date`"
+end
+
+
+echo "execution finished: `date`"

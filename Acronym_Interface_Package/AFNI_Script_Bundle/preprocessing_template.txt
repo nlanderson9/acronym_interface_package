@@ -1,0 +1,526 @@
+#!/bin/tcsh -xef
+
+# execute via :
+#   tcsh -xef $$%%script_name%%$$ |& tee output.$$%%script_name%%$$
+
+echo "(version 4.67, June 16, 2016)"
+echo "execution started: `date`"
+
+####################################################################################################
+# There are two primary blocks to change in this script.
+# The first is a pair of lines, just below this note.
+# The second is a large block, farther down and also marked.
+####################################################################################################
+
+
+$$%%subj_number_block%%$$
+
+echo $subj_number
+
+##################################################
+# ***CHANGE***
+# This is is the initial directory where all analyses will be saved.
+cd $$%%initial_dir%%$$
+##################################################
+
+# mkdir $subj_number
+#
+# cd $subj_number
+if ( -d subject_results ) then
+	echo "subject_results directory already exists!"
+else
+	mkdir subject_results
+endif
+
+cd subject_results
+
+# mkdir group.ERwD
+#
+# cd group.ERwD
+
+mkdir subj.$subj_number
+
+cd subj.$subj_number
+
+
+
+
+
+
+
+
+# =========================== auto block: setup ============================
+# script setup
+
+# take note of the AFNI version
+afni -ver
+
+# check that the current AFNI version is recent enough
+afni_history -check_date 28 Oct 2015
+if ( $status ) then
+	echo "** this script requires newer AFNI binaries (than 28 Oct 2015)"
+	echo "   (consider: @update.afni.binaries -defaults)"
+	exit
+endif
+
+# the user may specify a single subject to run with
+if ( $#argv > 0 ) then
+	set subj = $argv[1]
+else
+	set subj = $subj_number
+endif
+
+# assign output directory name
+set output_dir = $subj.results
+
+# verify that the results directory does not yet exist
+if ( -d $output_dir ) then
+	echo output dir "$subj.results" already exists
+	exit
+endif
+
+# create results and stimuli directories
+mkdir $output_dir
+mkdir $output_dir/stimuli
+
+
+echo "$output_dir"
+
+
+##################################################
+# ***CHANGE***
+
+# This is the directory where each individual subject's data is kept (updates for each participant loop)
+set input_dir='$$%%initial_dir%%$$/'"$subj"
+
+# This is the MNI template file (does not update for each participant loop)
+# Note: there is no need to change this unless you are not running on the Icarus server.
+set mask_dir='/data/nil-external/mcl/tools/afni/MNI152_T1_2009c+tlrc'
+
+# set list of runs
+set runs = (`count -digits 2 1 $$%%run_number%%$$`) # the final digit is your number of runs (2 1 6 reads: 2 digit numbers, 1 through 6)
+
+#set number of runs
+set nruns = $$%%run_number%%$$
+
+# and make note of repetitions (TRs) per run
+set tr_counts = $$%%tr_list%%$$
+
+# You only need to change the file extension after #$input_dir
+# This is where each individual subject's T1 is located (updates for each participant loop)
+3dcopy $$%%anatomy_file%%$$ \
+	$output_dir/anat_mprage
+
+
+# ============================ auto block: tcat ============================
+# apply 3dTcat to copy input dsets to results dir, while
+# removing the first 0 TRs
+
+# Change only the second part of each line (the absolute path to each individual subject's run data (updates for each participant loop)
+# Make sure the number of runs match your run number. If you copy/paste, make sure to increment the run number (e.g.pb00.$subj.r08) in the first line
+$$%%run_block%%$$
+
+# ***END OF CHANGES***
+##################################################
+
+
+
+# -------------------------------------------------------
+# enter the results directory (can begin processing data)
+cd $output_dir
+
+
+
+# ========================= radial correlate (for later QA/QC) ==========================
+@radial_correlate -do_clust yes pb00.*.HEAD > output.radial_correlate_"$subj".txt
+
+
+# ========================= uniformity correction ==========================
+# perform 'unifize' uniformity correction on anatomical dataset
+3dUnifize -prefix anat_mprage_unif anat_mprage+orig
+
+
+# ========================== auto block: outcount ==========================
+# data check: compute outlier fraction for each volume
+touch out.pre_ss_warn.txt
+foreach run ( $runs )
+	3dToutcount -automask -fraction -polort $$%%polort_number%%$$ -legendre                     \
+				pb00.$subj.r$run.tcat+orig > outcount.r$run.1D
+
+    # censor outlier TRs per run, ignoring the first 0 TRs
+    # - censor when more than 0.1 of automask voxels are outliers
+    # - step() defines which TRs to remove via censoring
+    1deval -a outcount.r$run.1D -expr "1-step(a-0.1)" > rm.out.cen.r$run.1D
+
+	# outliers at TR 0 might suggest pre-steady state TRs
+	if ( `1deval -a outcount.r$run.1D"{0}" -expr "step(a-0.4)"` ) then
+		echo "** TR #0 outliers: possible pre-steady state TRs in run $run" \
+			>> out.pre_ss_warn.txt
+	endif
+end
+
+# catenate outlier counts into a single time series
+cat outcount.r*.1D > outcount_rall.1D
+
+
+# ================================ despike =================================
+# apply 3dDespike to each run
+foreach run ( $runs )
+    3dDespike -NEW -nomask -prefix pb01.$subj.r$run.despike \
+        pb00.$subj.r$run.tcat+orig
+end
+
+
+## ================================= tshift =================================
+## time shift data so all slice timing is the same
+# foreach run ( $runs )
+#     3dTshift -tzero 0 -quintic -prefix pb02.$subj.r$run.tshift \
+#              pb01.$subj.r$run.despike
+# end
+
+### If above slice timing correction is unnecessary
+### Simply create pb02 as an identical copy of pb01
+### NOTE: DO NOT use slice timing correction if your scans use multiband sequences
+foreach run ( $runs )
+	3dcopy pb01.$subj.r$run.despike pb02.$subj.r$run.tshift
+end
+
+
+# ================================= Skullstrip ==================================
+
+3dSkullStrip -prefix anat_mprage_unif_ns -input anat_mprage_unif+orig
+
+
+# ================================= align ==================================
+
+# --------------------------------
+# Align centers of datasets to template (if not, later application of 3dNwarpApply will fail)
+@Align_Centers -base MNI152_T1_2009c+tlrc            \
+    -dset anat_mprage_unif_ns+orig                      \
+    -child pb02.$subj.r01.tshift+orig.HEAD           \
+    pb02.$subj.r02.tshift+orig.HEAD                  \
+    pb02.$subj.r03.tshift+orig.HEAD                  \
+    pb02.$subj.r04.tshift+orig.HEAD                  \
+    pb02.$subj.r05.tshift+orig.HEAD                  \
+    pb02.$subj.r06.tshift+orig.HEAD                  \
+    pb02.$subj.r07.tshift+orig.HEAD                  \
+    pb02.$subj.r08.tshift+orig.HEAD                  \
+    pb02.$subj.r09.tshift+orig.HEAD                  \
+
+# for e2a: compute anat alignment transformation to EPI registration base
+# (new anat will be intermediate, stripped, anat_mprage_ns+orig)
+align_epi_anat.py -epi2anat -anat anat_mprage_unif_ns_shft+orig  \
+       -anat_has_skull no                           \
+       -suffix _al_keep                             \
+	   -epi pb02.$subj.r01.tshift_shft+orig         \
+	   -epi_base 0                                  \
+	   -epi_strip 3dAutomask                        \
+	   -volreg off -tshift off						\
+	   -cost lpc+zz                                 \
+	   -giant_move                                  \
+	   -master_epi MIN_DXYZ                         \
+	   -child_epi pb02.$subj.r02.tshift_shft+orig   \
+	   pb02.$subj.r03.tshift_shft+orig              \
+	   pb02.$subj.r04.tshift_shft+orig              \
+
+align_epi_anat.py -epi2anat -anat anat_mprage_unif_ns_shft+orig  \
+       -anat_has_skull no                           \
+       -suffix _al_keep                             \
+	   -epi pb02.$subj.r05.tshift_shft+orig         \
+	   -epi_base 0                                  \
+	   -epi_strip 3dAutomask                        \
+	   -volreg off -tshift off						\
+	   -cost lpc+zz                                 \
+	   -giant_move                                  \
+	   -master_epi MIN_DXYZ                         \
+	   -child_epi pb02.$subj.r06.tshift_shft+orig   \
+	   pb02.$subj.r07.tshift_shft+orig              \
+	   pb02.$subj.r08.tshift_shft+orig              \
+	   pb02.$subj.r09.tshift_shft+orig              \
+
+
+# ================================== tlrc ==================================
+# warp anatomy to standard space
+auto_warp.py -base MNI152_T1_2009c+tlrc -input anat_mprage_unif_ns_shft+orig \
+             -skull_strip_input no -unifize_input no
+
+# move results up out of the awpy directory
+# (NL-warped anat, affine warp, NL warp)
+# (use typical standard space name for anat)
+# (wildcard is a cheap way to go after any .gz)
+3dbucket -prefix anat_mprage_unif_ns_shft                           \
+    awpy/anat_mprage_unif_ns_shft.aw.nii*
+mv awpy/anat.aff.Xat.1D .
+mv awpy/anat.aff.qw_WARP.nii .
+
+
+# --------------------------------
+# extract volreg registration base
+3dbucket -prefix vr_base pb02.$subj.r01.tshift_shft_al_keep+orig"[2]"
+
+
+# ================================= volreg =================================
+# align each dset to base volume, warp to tlrc space
+
+# verify that we have a +tlrc warp dataset
+if ( ! -f anat_mprage_unif_ns_shft+tlrc.HEAD ) then
+    echo "** missing +tlrc warp dataset: anat_mprage_unif_ns_shft+tlrc.HEAD"
+    exit
+endif
+
+# register and warp
+foreach run ( $runs )
+    # register each volume to the base
+    3dvolreg -verbose -zpad 1 -base vr_base+orig                         \
+             -1Dfile $subj.dfile.r$run.1D -prefix rm.epi.volreg.r$run          \
+             -cubic                                                      \
+             -1Dmatrix_save mat.r$run.vr.aff12.1D                        \
+             pb02.$subj.r$run.tshift_shft_al_keep+orig
+
+    # create an all-1 dataset to mask the extents of the warp
+    3dcalc -overwrite -a pb02.$subj.r$run.tshift_shft_al_keep+orig -expr 1              \
+           -prefix rm.epi.all1
+
+    # catenate volreg/tlrc xforms
+    cat_matvec -ONELINE                                                  \
+               anat.aff.Xat.1D                                           \
+               mat.r$run.vr.aff12.1D > mat.r$run.warp.aff12.1D
+
+    # apply catenated xform: volreg/tlrc
+    # then apply non-linear standard-space warp
+    3dNwarpApply -master anat_mprage_unif_ns_shft+tlrc -dxyz 3                 \
+                 -source pb02.$subj.r$run.tshift_shft_al_keep+orig          \
+                 -nwarp "anat.aff.qw_WARP.nii mat.r$run.warp.aff12.1D"      \
+                 -prefix rm.epi.nomask.r$run
+
+    # warp the all-1 dataset for extents masking
+    3dNwarpApply -master anat_mprage_unif_ns_shft+tlrc -dxyz 3              \
+                 -source rm.epi.all1+orig                                \
+                 -nwarp "anat.aff.qw_WARP.nii mat.r$run.warp.aff12.1D"   \
+                 -ainterp NN -quiet                                      \
+                 -prefix rm.epi.1.r$run
+
+    # make an extents intersection mask of this run
+    3dTstat -min -prefix rm.epi.min.r$run rm.epi.1.r$run+tlrc
+end
+
+# make a single file of registration params
+cat $subj.dfile.r*.1D > $subj.dfile_rall.1D
+
+# compute motion magnitude time series: the Euclidean norm
+# (sqrt(sum squares)) of the motion parameter derivatives
+1d_tool.py -infile $subj.dfile_rall.1D -set_nruns $$%%run_number%%$$                           \
+           -derivative  -collapse_cols euclidean_norm                    \
+           -write motion_${subj}_enorm.1D
+
+# ----------------------------------------
+# create the extents mask: mask_epi_extents+tlrc
+# (this is a mask of voxels that have valid data at every TR)
+3dMean -datum short -prefix rm.epi.mean rm.epi.min.r*.HEAD
+3dcalc -a rm.epi.mean+tlrc -expr 'step(a-0.999)' -prefix mask_epi_extents
+
+# and apply the extents mask to the EPI data
+# (delete any time series with missing data)
+foreach run ( $runs )
+    3dcalc -a rm.epi.nomask.r$run+tlrc -b mask_epi_extents+tlrc          \
+           -expr 'a*b' -prefix pb03.$subj.r$run.volreg
+end
+
+# warp the volreg base EPI dataset to make a final version
+cat_matvec -ONELINE anat.aff.Xat.1D > mat.basewarp.aff12.1D
+
+3dNwarpApply -master anat_mprage_unif_ns_shft+tlrc -dxyz 3                  \
+             -source vr_base+orig                                        \
+             -nwarp "anat.aff.qw_WARP.nii mat.basewarp.aff12.1D"         \
+             -prefix final_epi_vr_base
+
+# create an anat_final dataset, aligned with stats
+3dcopy anat_mprage_unif_ns_shft+tlrc anat_final.$subj
+
+# record final registration costs
+3dAllineate -base final_epi_vr_base+tlrc -allcostX                       \
+            -input anat_final.$subj+tlrc |& tee out.allcostX.txt
+
+# -----------------------------------------
+# warp anat follower datasets (non-liner)
+3dNwarpApply -source anat_mprage_unif_ns_shft+orig                              \
+             -master anat_final.$subj+tlrc                                   \
+             -ainterp wsinc5 -nwarp anat.aff.qw_WARP.nii anat.aff.Xat.1D     \
+             anat_mprage_unif_ns_shft_al_keep_mat.aff12.1D                      \
+             -prefix anat_wo_skull_warped
+
+
+
+
+#######
+##Old tlrc and volreg sections for linear/affine warping
+#######
+
+## ================================== tlrc ==================================
+## warp anatomy to standard space
+#@auto_tlrc -base MNI152_T1_2009c+tlrc -input anat_mprage_ns+orig -no_ss
+#
+## store forward transformation matrix in a text file
+#cat_matvec anat_mprage_ns+tlrc::WARP_DATA -I > warp.anat.Xat.1D
+#
+## ================================= volreg =================================
+## align each dset to base volume, align to anat, warp to tlrc space
+#
+## verify that we have a +tlrc warp dataset
+#if ( ! -f anat_mprage_ns+tlrc.HEAD ) then
+#	echo "** missing +tlrc warp dataset: anat_mprage+tlrc.HEAD"
+#	exit
+#endif
+#
+## register and warp
+#foreach run ( $runs )
+#	# register each volume to the base
+#	3dvolreg -verbose -zpad 1 -base vr_base+orig                \
+#			 -1Dfile $subj.dfile.r$run.1D -prefix rm.epi.volreg.r$run \
+#			 -cubic                                             \
+#			 -1Dmatrix_save mat.r$run.vr.aff12.1D               \
+#			 pb02.$subj.r$run.tshift+orig
+#
+#	# create an all-1 dataset to mask the extents of the warp
+#	3dcalc -overwrite -a pb02.$subj.r$run.tshift+orig -expr 1   \
+#		   -prefix rm.epi.all1
+#
+#	# catenate volreg/epi2anat/tlrc xforms
+#	cat_matvec -ONELINE                                         \
+#			   anat_mprage_ns+tlrc::WARP_DATA -I              \
+#			   anat_mprage_al_junk_mat.aff12.1D -I            \
+#			   mat.r$run.vr.aff12.1D > mat.r$run.warp.aff12.1D
+#
+#	# apply catenated xform: volreg/epi2anat/tlrc
+#	3dAllineate -base anat_mprage_ns+tlrc                     \
+#				-input pb02.$subj.r$run.tshift+orig             \
+#				-1Dmatrix_apply mat.r$run.warp.aff12.1D         \
+#				-mast_dxyz 4                                    \
+#				-prefix rm.epi.nomask.r$run
+#
+#	# warp the all-1 dataset for extents masking
+#	3dAllineate -base anat_mprage_ns+tlrc                    \
+#				-input rm.epi.all1+orig                         \
+#				-1Dmatrix_apply mat.r$run.warp.aff12.1D         \
+#				-mast_dxyz 4 -final NN -quiet                   \
+#				-prefix rm.epi.1.r$run
+#
+#	# make an extents intersection mask of this run
+#	3dTstat -min -prefix rm.epi.min.r$run rm.epi.1.r$run+tlrc
+#end
+#
+## make a single file of registration params
+#cat $subj.dfile.r*.1D > $subj.dfile_rall.1D
+#
+## ----------------------------------------
+## create the extents mask: mask_epi_extents+tlrc
+## (this is a mask of voxels that have valid data at every TR)
+#3dMean -datum short -prefix rm.epi.mean rm.epi.min.r*.HEAD
+#3dcalc -a rm.epi.mean+tlrc -expr 'step(a-0.999)' -prefix mask_epi_extents
+#
+## and apply the extents mask to the EPI data
+## (delete any time series with missing data)
+#foreach run ( $runs )
+#	3dcalc -a rm.epi.nomask.r$run+tlrc -b mask_epi_extents+tlrc \
+#		   -expr 'a*b' -prefix pb03.$subj.r$run.volreg
+#end
+#
+## warp the volreg base EPI dataset to make a final version
+#cat_matvec -ONELINE                                             \
+#		   anat_mprage_ns+tlrc::WARP_DATA -I                  \
+#		   anat_mprage_al_junk_mat.aff12.1D -I  > mat.basewarp.aff12.1D
+#
+#3dAllineate -base anat_mprage_ns+tlrc                          \
+#			-input vr_base+orig                                 \
+#			-1Dmatrix_apply mat.basewarp.aff12.1D               \
+#			-mast_dxyz 4                                        \
+#			-prefix final_epi_vr_base
+#
+## create an anat_final dataset, aligned with stats
+#3dcopy anat_mprage_ns+tlrc anat_final.$subj
+#
+## -----------------------------------------
+## warp anat follower datasets (affine)
+#3dAllineate -source anat_mprage+orig                          \
+#			-master anat_final.$subj+tlrc                       \
+#			-final wsinc5 -1Dmatrix_apply warp.anat.Xat.1D      \
+#			-prefix anat_w_skull_warped
+#
+
+
+
+
+# ================================== blur ==================================
+# blur each volume of each run
+foreach run ( $runs )
+	3dmerge -1blur_fwhm 4.0 -doall -prefix pb04.$subj.r$run.blur \
+			pb03.$subj.r$run.volreg+tlrc
+end
+
+
+# ================================== mask ==================================
+# create 'full_mask' dataset (union mask)
+foreach run ( $runs )
+	3dAutomask -dilate 1 -prefix rm.mask_r$run pb04.$subj.r$run.blur+tlrc
+end
+
+# create union of inputs, output type is byte
+3dmask_tool -inputs rm.mask_r*+tlrc.HEAD -union -prefix full_mask.$subj
+
+# ---- create subject anatomy mask, mask_anat.$subj+tlrc ----
+#      (resampled from tlrc anat)
+3dresample -master full_mask.$subj+tlrc -input anat_mprage_unif_ns_shft+tlrc  \
+		   -prefix rm.resam.anat
+
+# convert to binary anat mask; fill gaps and holes
+3dmask_tool -dilate_input 5 -5 -fill_holes -input rm.resam.anat+tlrc  \
+			-prefix mask_anat.$subj
+
+# compute overlaps between anat and EPI masks
+3dABoverlap -no_automask full_mask.$subj+tlrc mask_anat.$subj+tlrc    \
+			|& tee out.mask_ae_overlap.txt
+
+# note Dice coefficient of masks, as well
+3ddot -dodice full_mask.$subj+tlrc mask_anat.$subj+tlrc               \
+	  |& tee out.mask_ae_dice.txt
+
+# ---- create group anatomy mask, mask_group+tlrc ----
+#      (resampled from tlrc base anat, MNI152_T1_2009c+tlrc)
+3dresample -master full_mask.$subj+tlrc -prefix ./rm.resam.group      \
+		   -input "$mask_dir"
+
+# convert to binary group mask; fill gaps and holes
+3dmask_tool -dilate_input 5 -5 -fill_holes -input rm.resam.group+tlrc \
+			-prefix mask_group
+
+
+# ================================= scale ==================================
+# scale each voxel time series to have a mean of 100
+# (be sure no negatives creep in)
+# (subject to a range of [0,200])
+foreach run ( $runs )
+	3dTstat -prefix rm.mean_r$run pb04.$subj.r$run.blur+tlrc
+	3dcalc -a pb04.$subj.r$run.blur+tlrc -b rm.mean_r$run+tlrc \
+		   -c mask_epi_extents+tlrc                            \
+		   -expr 'c * min(200, a/b*100)*step(a)*step(b)'       \
+		   -prefix pb05.$subj.r$run.scale
+end
+
+
+### adding censoring file for QA/QC (also created in GLM script)
+
+# create censor file motion_${subj}_censor.1D, for censoring motion
+1d_tool.py -infile $subj.dfile_rall.1D -set_nruns $nruns                 \
+-show_censor_count -censor_prev_TR                                       \
+-censor_motion 0.3 motion_${subj}                                        \
+-overwrite
+
+# generate a review script for the unprocessed EPI data
+gen_epi_review.py -script @epi_review.$subj \
+-dsets pb00.$subj.r*.tcat+orig.HEAD
+
+rm -f rm.*
+
+echo "$subj finished: `date`"
+end
+echo "execution finished: `date`"  

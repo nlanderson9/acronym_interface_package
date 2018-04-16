@@ -1,0 +1,41 @@
+The following must be installed before using the Acronym Interface Package:
+
+##########################################################
+
+In order to use this script, you must have several programs already installed on your computer. These are described
+below, but are listed here:
+pydicom - Python module, used for manipulation of DICOM files
+dcm2niix - program for converting DICOM files to NIfTI files
+sshpass - this allows for the script to use your Icarus login/password to send file backups to Icarus
+
+***NOTE***
+If you are running this script on Pegasus, all of the necessary installations from above have already been performed.
+
+##########################################################
+
+To rename DICOM folders, you must install the pydicom module for python. This can be done by typing the following
+command into Terminal:
+
+pip install pydicom
+
+##########################################################
+
+In order to convert files from DICOM to NIfTI (.nii), you need to have dcm2niix installed
+(https://www.nitrc.org/projects/dcm2nii/).
+
+***IMPORTANT: Previous versions of Data_Prep.py (called Data_Processing.py) have used dcm2nii, a deprecated version of this tool.
+Make sure that you have dcm2niix (ending in x) installed and set up in order for this script to work. The previous
+version required manual modification of a preferences file in order to achieve the desired output; that is no longer
+necessary.
+
+(As a note, DICOM to NIfTI conversion can be performed manually using the MRIcroGL GUI, or through the command line.)
+
+If you installed dcm2niix in your Applications folder, no further steps are necessary.
+If you chose a different folder, you will need to edit the Data_Prep.py script with the correct folder (line 99).
+
+##########################################################
+In order to back up data to Icarus, you will need to install sshpass.
+Instructions can be found here:
+https://sourceforge.net/projects/sshpass/
+
+sshpass must be installed in /usr/local/bin/
