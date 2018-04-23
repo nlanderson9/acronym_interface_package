@@ -668,7 +668,7 @@ if "Preprocessing" in type_selection:
 			run_0X = "0" + str(run)
 		else:
 			run_0X = str(run)
-		new_preprocessing_control_list.append('input_run_' + run_0X + ":" + runs[run-1])
+		new_preprocessing_control_list.append('run_' + run_0X + ":" + runs[run-1])
 
 	with open(preprocessing_presets_control_file, 'w') as control_file:
 		control_file.writelines('\n'.join(new_preprocessing_control_list))
@@ -1702,7 +1702,7 @@ if "GLM" in type_selection:
 				file_0X = "0" + str(file)
 			else:
 				file_0X = str(file)
-			new_glm_control_list.append('input_timing_file_' + file_0X + ":" + stim_files[file - 1])
+			new_glm_control_list.append('timing_file_' + file_0X + ":" + stim_files[file - 1])
 
 		with open(glm_presets_control_file, 'w') as control_file:
 			control_file.writelines('\n'.join(new_glm_control_list))
