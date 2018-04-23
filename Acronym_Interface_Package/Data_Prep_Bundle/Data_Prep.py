@@ -418,11 +418,6 @@ while not_submitted:
 	mainloop()
 
 
-
-print(CNDA_auto_selection)
-print(type(CNDA_auto_selection))
-
-
 number_of_sessions = int(number_of_sessions)
 
 if folder.endswith("/"):
@@ -974,10 +969,6 @@ for participant_number in set_range:
 			entries[item] = None
 		entries_outcome = {}
 
-		CNDA_login = None
-		CNDA_password = None
-		Icarus_login = None
-		Icarus_password = None
 		day1 = None
 		month1 = None
 		year1 = None

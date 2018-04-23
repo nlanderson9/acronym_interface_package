@@ -1,11 +1,13 @@
-input_script_prefix:proc.ERwD
-input_initial_directory:/data/nil-external/mcl/Anderson/NP1029/ERwD
-input_participant_list:(ERwD001 ERwD002 ERwD003 ERwD004 ERwD005 ERwD006 ERwD007 ERwD008 ERwD009 ERwD010 ERwD011 ERwD012 ERwD013 ERwD014 ERwD015 ERwD016 ERwD017 ERwD018 ERwD019 ERwD020 ERwD021 ERwD022 ERwD023 ERwD024)
-input_number_runs:9
-input_number_TRs:314
-input_TR_length:1.1
-input_TR_list:( 314 314 314 314 314 314 314 314 314 )
-input_anatomy:$input_dir/anat/coT1_"$subj".nii
+script_prefix:ERwD_test
+initial_directory:/data/nil-external/mcl/Anderson/NP1029/ERwD
+MNI_template_path:/data/nil-external/mcl/tools/afni/MNI152_T1_2009c+tlrc
+participant_list:(ERwD001 ERwD002 ERwD003 ERwD004 ERwD005 ERwD006 ERwD007 ERwD008 ERwD009 ERwD010 ERwD011 ERwD012 ERwD013 ERwD014 ERwD015 ERwD016 ERwD017 ERwD018 ERwD019 ERwD020 ERwD021 ERwD022 ERwD023 ERwD024)
+number_runs:9
+number_TRs:314
+TR_length:1.1
+lengths_equal:Yes
+TR_list:( 314 314 314 314 314 314 314 314 314 )
+anatomy:$input_dir/anat/coT1_"$subj".nii
 input_run_01:$input_dir/func/Run01_"$subj"Encoding1.nii
 input_run_02:$input_dir/func/Run02_"$subj"Retrieval1a.nii
 input_run_03:$input_dir/func/Run03_"$subj"Retrieval1b.nii

@@ -273,3 +273,11 @@ def reorganize_NIfTI(multi_session, session, id_prefix, dicom_folder, nifti_fold
 	print("Session %s NIfTI files relocated in subfolders\n" % session)
 
 	shutil.rmtree(nifti_folder)  # now that all relevant NIfTI files have been relocated and renamed, delete the folder with any remaining (unnecessary) NIfTI files
+
+	# If there are any empty folder now (for example, no anat file from this session), delete the empty folder
+	if not os.listdir(anat_folder):
+		os.rmdir(anat_folder)
+	if not os.listdir(func_folder):
+		os.rmdir(func_folder)
+	if not os.listdir(fieldmap_folder):
+		os.rmdir(fieldmap_folder)

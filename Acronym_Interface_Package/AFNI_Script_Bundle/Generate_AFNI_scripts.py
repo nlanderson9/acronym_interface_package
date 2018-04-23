@@ -295,22 +295,24 @@ if "Preprocessing" in type_selection:
 	runs = []
 	for item in preprocessing_presets_init:
 		splits = item.split(":")
-		if "input_run" not in splits[0]:
+		if "run_" not in splits[0]:
 			preprocessing_presets[splits[0]] = splits[1]
 		else:
 			runs.append(splits[1])
-		preprocessing_presets["input_runs"] = runs
+		preprocessing_presets["runs"] = runs
 
 
-	input_script_prefix = preprocessing_presets['input_script_prefix']
-	input_initial_directory = preprocessing_presets['input_initial_directory']
-	input_participant_list = preprocessing_presets['input_participant_list']
-	input_number_runs = preprocessing_presets['input_number_runs']
-	input_number_TRs = preprocessing_presets['input_number_TRs']
-	input_TR_length = preprocessing_presets['input_TR_length']
-	input_TR_list = preprocessing_presets['input_TR_list']
-	input_anatomy = preprocessing_presets['input_anatomy']
-	preset_runs = preprocessing_presets['input_runs']
+	input_script_prefix = preprocessing_presets['script_prefix']
+	input_initial_directory = preprocessing_presets['initial_directory']
+	input_MNI_template_path = preprocessing_presets['MNI_template_path']
+	input_participant_list = preprocessing_presets['participant_list']
+	input_number_runs = preprocessing_presets['number_runs']
+	input_number_TRs = preprocessing_presets['number_TRs']
+	input_TR_length = preprocessing_presets['TR_length']
+	input_TR_list = preprocessing_presets['TR_list']
+	input_lengths_equal = preprocessing_presets['lengths_equal']
+	input_anatomy = preprocessing_presets['anatomy']
+	preset_runs = preprocessing_presets['runs']
 
 
 	####################################################################################################
@@ -319,29 +321,30 @@ if "Preprocessing" in type_selection:
 
 	script_prefix = None
 	initial_dir = None
+	MNI_template_path = None
 	participant_list = None
 	run_number = None
-	tr_same = None
 	tr_count = None
 	tr_length = None
 	anatomy_file = None
 	runs = []
 	tr_list = None
 
+
 	selection = None
 	newlist = input_participant_list[1:-1].split(" ")
 
 
 	def entry_fields():
-		global script_prefix, initial_dir, participant_list, run_number, tr_same, tr_count, tr_length
+		global script_prefix, initial_dir, MNI_template_path, participant_list, run_number, tr_count, tr_length
 		initial_dir = e1.get()  # retrieves the response from the corresponding input box and assigns its value to the global variable
+		MNI_template_path = e7.get()
 		participant_list = e6.get()
 		run_number = e2.get()
 		tr_count = e4.get()
 		tr_length = e3.get()
 		script_prefix = e5.get()
 		master.destroy()
-
 
 	def sel():
 		global selection
@@ -356,7 +359,15 @@ if "Preprocessing" in type_selection:
 	master.title("Input info")
 	master.geometry('+1070+500')
 	master.wm_attributes("-topmost", 1)
+
 	var = IntVar()
+	if input_lengths_equal.lower() == "yes":
+		var.set(1)
+		selection = str(var.get())
+	elif input_lengths_equal.lower() == "no":
+		var.set(2)
+		selection = str(var.get())
+
 
 	Label(master, text="Script Name Prefix").grid(row=0)
 	e5 = Entry(master)  # Create text entry box
@@ -379,7 +390,15 @@ if "Preprocessing" in type_selection:
 
 	Label(master, text="").grid(row=7)
 
-	Label(master, text="List of Participants").grid(row=8)
+	Label(master, text="Path to your preferred MNI template (usually MNI152_T1_2009c+tlrc, found in 'users/yourname/abin/'").grid(row=8)
+	e7 = Entry(master, width=50)
+	e7.insert(0, input_MNI_template_path)
+	e7.grid(row=9)
+
+	Label(master, text="").grid(row=10)
+
+
+	Label(master, text="List of Participants").grid(row=11)
 	if len(input_participant_list) > 1:
 		participant_width = len(input_participant_list)
 		if participant_width > ((master.winfo_screenwidth() / 10) - 20):
@@ -388,40 +407,40 @@ if "Preprocessing" in type_selection:
 		participant_width = (master.winfo_screenwidth() / 10) - 20
 	e6 = Entry(master, width=participant_width)
 	e6.insert(0, input_participant_list)
-	e6.grid(row=9, padx=20)
-
-	Label(master, text="").grid(row=10)
-
-	Label(master, text="Number of runs").grid(row=11)
-	e2 = Entry(master, width=20)
-	e2.insert(0, input_number_runs)
-	e2.grid(row=12)
+	e6.grid(row=12, padx=20)
 
 	Label(master, text="").grid(row=13)
 
-	Label(master, text="Is the number of TRs the same for each run?").grid(row=14)
-	Radiobutton(master, text="Yes", padx=20, variable=var, value=1, command=sel).grid(row=15)
-	Radiobutton(master, text="No", padx=20, variable=var, value=2, command=sel).grid(row=16)
+	Label(master, text="Number of runs").grid(row=14)
+	e2 = Entry(master, width=20)
+	e2.insert(0, input_number_runs)
+	e2.grid(row=15)
 
-	Label(master, text="").grid(row=17)
+	Label(master, text="").grid(row=16)
 
-	Label(master, text="Number of TRs (ignore if different for different runs)").grid(row=18)
-	e4 = Entry(master, width=20)
-	e4.insert(0, input_number_TRs)
-	e4.grid(row=19)
+	Label(master, text="Is the number of TRs the same for each run?").grid(row=17)
+	Radiobutton(master, text="Yes", padx=20, variable=var, value=1, command=sel).grid(row=18)
+	Radiobutton(master, text="No", padx=20, variable=var, value=2, command=sel).grid(row=19)
 
 	Label(master, text="").grid(row=20)
 
-	Label(master, text="Length of TR (in seconds)").grid(row=21)
-	e3 = Entry(master, width=20)
-	e3.insert(0, input_TR_length)
-	e3.grid(row=22)
+	Label(master, text="Number of TRs (ignore if different for different runs)").grid(row=21)
+	e4 = Entry(master, width=20)
+	e4.insert(0, input_number_TRs)
+	e4.grid(row=22)
 
 	Label(master, text="").grid(row=23)
 
-	Button(master, text='Submit', command=entry_fields).grid(row=24, sticky=S,
+	Label(master, text="Length of TR (in seconds)").grid(row=24)
+	e3 = Entry(master, width=20)
+	e3.insert(0, input_TR_length)
+	e3.grid(row=25)
+
+	Label(master, text="").grid(row=26)
+
+	Button(master, text='Submit', command=entry_fields).grid(row=27, sticky=S,
 															 pady=4)  # create a "Submit" button that triggers the above "entry_fields" function
-	Button(master, text='Cancel', command=exitscript).grid(row=25, sticky=S,
+	Button(master, text='Cancel', command=exitscript).grid(row=28, sticky=S,
 															 pady=4)  # create a "Submit" button that triggers the above "entry_fields" function
 
 	master.update_idletasks()
@@ -530,6 +549,7 @@ if "Preprocessing" in type_selection:
 	e1.grid(row=6, column=1)
 
 	Label(master, text="").grid(row=7)
+	rowloop = 8
 	for run in range(1, run_number + 1):
 		if run < 10:
 			run_0X = "0" + str(run)
@@ -538,16 +558,17 @@ if "Preprocessing" in type_selection:
 
 		run_entries[run_0X] = StringVar()
 
-		Label(master, text="Run" + run_0X).grid(column=0)
+		Label(master, text="Run" + run_0X).grid(column=0, row=rowloop)
 		entry = Entry(master, textvariable=run_entries[run_0X], width=50)
 		if len(preset_runs) >= run:
 			entry.insert(0, preset_runs[run - 1])
-		entry.grid(column=1)
+		entry.grid(column=1, row=rowloop)
+		rowloop += 1
 
-	Label(master, text="").grid(row=23)
+	Label(master, text="").grid(row=rowloop)
 
-	Button(master, text='Submit', command=entry_fields3).grid(sticky=S, pady=4, columnspan=2)
-	Button(master, text='Cancel', command=exitscript).grid(sticky=S, pady=4, columnspan=2)
+	Button(master, text='Submit', command=entry_fields3).grid(sticky=S, pady=4, columnspan=2, row=rowloop+1)
+	Button(master, text='Cancel', command=exitscript).grid(sticky=S, pady=4, columnspan=2, row=rowloop+2)
 
 	master.update_idletasks()
 	windowheight = master.winfo_height()
@@ -560,7 +581,7 @@ if "Preprocessing" in type_selection:
 
 	for item in run_entries_outcome:
 		if not run_entries_outcome[item]:
-			sys.exit("Please make sure to inclue a name for each of your runs")
+			sys.exit("Please make sure to include a name for each of your runs")
 
 	key_list = sorted(run_entries_outcome)
 	for item in key_list:
@@ -604,6 +625,7 @@ if "Preprocessing" in type_selection:
 	template = template.replace("$$%%script_name%%$$", script_name)
 	template = template.replace("$$%%subj_number_block%%$$", subj_number_block)
 	template = template.replace("$$%%initial_dir%%$$", initial_dir)
+	template = template.replace("$$%%MNI_template_path%%$$", MNI_template_path)
 	template = template.replace("$$%%run_number%%$$", str(run_number))
 	template = template.replace("$$%%tr_list%%$$", tr_list)
 	template = template.replace("$$%%anatomy_file%%$$", anatomy_file)
@@ -625,14 +647,21 @@ if "Preprocessing" in type_selection:
 	##### Updating Preprocessing Presets Control List #####
 
 
-	new_preprocessing_control_list = ['input_script_prefix:' + script_prefix,
-						'input_initial_directory:' + initial_dir,
-						'input_participant_list:' + participant_list,
-						'input_number_runs:' + str(run_number),
-						'input_number_TRs:' + str(tr_count),
-						'input_TR_length:' + str(tr_length),
-						'input_TR_list:' + tr_list,
-						'input_anatomy:' + anatomy_file]
+	if selection == 1:
+		lengths_equal = "Yes"
+	elif selection == 2:
+		lengths_equal = "No"
+
+	new_preprocessing_control_list = ['script_prefix:' + script_prefix,
+									  'initial_directory:' + initial_dir,
+									  'MNI_template_path:' + MNI_template_path,
+									  'participant_list:' + participant_list,
+									  'number_runs:' + str(run_number),
+									  'number_TRs:' + str(tr_count),
+									  'TR_length:' + str(tr_length),
+									  'lengths_equal:' + lengths_equal,
+									  'TR_list:' + tr_list,
+									  'anatomy:' + anatomy_file]
 
 	for run in range(1, run_number + 1):
 		if run < 10:
@@ -990,21 +1019,30 @@ if "GLM" in type_selection:
 		timings = []
 		for item in glm_presets_init:
 			splits = item.split(":")
-			if "input_timing" not in splits[0]:
+			if "timing_file_" not in splits[0]:
 				glm_presets[splits[0]] = splits[1]
 			else:
 				timings.append(splits[1])
-			glm_presets["input_timings"] = timings
+			glm_presets["timings"] = timings
 
-		input_script_prefix = glm_presets['input_script_prefix']
-		input_participant_list = glm_presets['input_participant_list']
-		input_GLM_name = glm_presets['input_GLM_name']
-		input_initial_directory = glm_presets['input_initial_directory']
-		input_number_runs = glm_presets['input_number_runs']
-		input_number_TRs = glm_presets['input_number_TRs']
-		input_TR_length = glm_presets['input_TR_length']
-		input_onsets_folder = glm_presets['input_onsets_folder']
-		input_number_timing_files = glm_presets['input_number_timing_files']
+		input_script_prefix = glm_presets['script_prefix']
+		input_participant_list = glm_presets['participant_list']
+		input_GLM_name = glm_presets['GLM_name']
+		input_initial_directory = glm_presets['initial_directory']
+		input_number_runs = glm_presets['number_runs']
+		input_number_TRs = glm_presets['number_TRs']
+		input_TR_length = glm_presets['TR_length']
+		input_onsets_folder = glm_presets['onsets_folder']
+		input_number_timing_files = glm_presets['number_timing_files']
+		input_trial_covariate = glm_presets['trial_covariate']
+
+
+		if input_trial_covariate.lower() == 'yes':
+			input_trial_covariate = "Yes"
+		elif input_trial_covariate.lower() == 'no':
+			input_trial_covariate = "No"
+		else:
+			input_trial_covariate = ""
 
 
 		####################################################################################################
@@ -1278,6 +1316,14 @@ if "GLM" in type_selection:
 		Label(master, text="").grid(row=count)
 
 		var1 = IntVar()
+
+		if input_trial_covariate == "Yes":
+			var1.set(1)
+			covariate = str(var1.get())
+		elif input_trial_covariate == "No":
+			var1.set(2)
+			covariate = str(var1.get())
+
 		Label(master, text="Do your timing files have covariates (e.g. RT), implemented with '*'?").grid(row=count+1,
 																										 padx=20,
 																										 columnspan=2)
@@ -1635,15 +1681,21 @@ if "GLM" in type_selection:
 		####################################################################################################
 		##### Updating GLM Presets Control List #####
 
-		new_glm_control_list = ['input_script_prefix:' + script_prefix,
-								'input_participant_list:' + participant_list,
-								'input_GLM_name:' + GLM_folder,
-								'input_initial_directory:' + main_dir,
-								'input_number_runs:' + str(run_number),
-								'input_number_TRs:' + str(tr_count),
-								'input_TR_length:' + str(tr_length),
-								'input_onsets_folder:' + timing_files_folder,
-								'input_number_timing_files:' + number_timing_files]
+		if covariate == "1":
+			trial_covariate = "Yes"
+		elif covariate == "2":
+			trial_covariate = "No"
+
+		new_glm_control_list = ['script_prefix:' + script_prefix,
+								'participant_list:' + participant_list,
+								'GLM_name:' + GLM_folder,
+								'initial_directory:' + main_dir,
+								'number_runs:' + str(run_number),
+								'number_TRs:' + str(tr_count),
+								'TR_length:' + str(tr_length),
+								'onsets_folder:' + timing_files_folder,
+								'number_timing_files:' + number_timing_files,
+								'trial_covariate:' + trial_covariate]
 
 		for file in range(1, int(number_timing_files) + 1):
 			if file < 10:
