@@ -390,7 +390,7 @@ if "Preprocessing" in type_selection:
 
 	Label(master, text="").grid(row=7)
 
-	Label(master, text="Path to your preferred MNI template (usually MNI152_T1_2009c+tlrc, found in 'users/yourname/abin/'").grid(row=8)
+	Label(master, text="Path to your preferred MNI template (usually MNI152_T1_2009c+tlrc, found in 'users/yourname/abin/')").grid(row=8)
 	e7 = Entry(master, width=50)
 	e7.insert(0, input_MNI_template_path)
 	e7.grid(row=9)
@@ -633,12 +633,12 @@ if "Preprocessing" in type_selection:
 	template = template.replace("$$%%polort_number%%$$", str(polort_number))
 
 	# Write the text file.
-	output_file = output_path + "/" + script_name  # Name/location of the generated AFNI script
+	output_file = output_path + "/proc." + script_name  # Name/location of the generated AFNI script
 	textfile = open(output_file, 'w')  # Create the textfile
 	textfile.write(template)
 	textfile.close()
 
-	print("\nAFNI script generated: %s" % script_name)
+	print("\nAFNI script generated: proc.%s" % script_name)
 	print("\nRun command:\n tcsh -xef proc.%s |& tee output.proc.%s" % (script_name, script_name))
 
 
@@ -889,12 +889,12 @@ if "GLM" in type_selection:
 		template = template.replace("$$%%ideals_block%%$$", ideals_block)
 
 		# Write the text file.
-		output_file = output_path + "/" + script_name  # Name/location of the generated AFNI script
+		output_file = output_path + "/proc." + script_name  # Name/location of the generated AFNI script
 		textfile = open(output_file, 'w')  # Create the textfile
 		textfile.write(template)
 		textfile.close()
 
-		print("\nAFNI script generated: %s" % script_name)
+		print("\nAFNI script generated: proc.%s" % script_name)
 		print("\nRun command:\n tcsh -xef proc.%s |& tee output.proc.%s" % (script_name, script_name))
 
 
