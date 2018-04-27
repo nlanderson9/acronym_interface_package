@@ -990,7 +990,6 @@ if "GLM" in type_selection:
 
 
 
-
 			write_GLM_Script(tr_length, tr_count, participant_list, script_prefix, GLM_folder, choice_gam_tent,
 								 stim_files, stim_names, timing_files_folder, covariate, new_glts, glt_names,
 								 run_number, glm_template_file, main_dir, output_path)
