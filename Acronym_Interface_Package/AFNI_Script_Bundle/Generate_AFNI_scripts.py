@@ -890,7 +890,8 @@ if "GLM" in type_selection:
 		template = template.replace("$$%%ideals_block%%$$", ideals_block)
 
 		# Write the text file.
-		script_name = "proc." + script_name
+		if not script_name.startswith("proc."):
+			script_name = "proc." + script_name
 		output_file = output_path + "/" + script_name  # Name/location of the generated AFNI script
 		textfile = open(output_file, 'w')  # Create the textfile
 		textfile.write(template)
@@ -994,7 +995,7 @@ if "GLM" in type_selection:
 								 stim_files, stim_names, timing_files_folder, covariate, new_glts, glt_names,
 								 run_number, glm_template_file, main_dir, output_path)
 
-			script_name = script_prefix + "_GLM_" + GLM_folder
+			script_name = "proc." + script_prefix + "_GLM_" + GLM_folder
 
 			if backup:
 				icarus_Backup(icarus_password, output_path, script_name, icarus_login, icarus_backup_path)
@@ -1673,7 +1674,7 @@ if "GLM" in type_selection:
 						 stim_files, stim_names, timing_files_folder, covariate, new_glts, glt_names,
 						 run_number, glm_template_file, main_dir, output_path)
 
-		script_name = script_prefix + "_GLM_" + GLM_folder
+		script_name = "proc." + script_prefix + "_GLM_" + GLM_folder
 
 		if backup:
 			icarus_Backup(icarus_password, output_path, script_name, icarus_login, icarus_backup_path)
@@ -2051,6 +2052,9 @@ if ( ! -d $results_dir ) mkdir $results_dir
 		print("AFNI script generated: %s" % script_name)
 		print("\nRun command:\n tcsh -xef %s |& tee output.%s" % (script_name, script_name))
 
+		if backup:
+			icarus_Backup(icarus_password, output_path, script_name, icarus_login, icarus_backup_path)
+
 		####################################################################################################
 		####################################################################################################
 		####################################################################################################
@@ -2280,6 +2284,9 @@ if ( ! -d $results_dir ) mkdir $results_dir
 			textfile.close()
 		print("AFNI script generated: %s" % script_name)
 		print("\nRun command:\n tcsh -xef %s |& tee output.%s" % (script_name, script_name))
+
+		if backup:
+			icarus_Backup(icarus_password, output_path, script_name, icarus_login, icarus_backup_path)
 
 		####################################################################################################
 		####################################################################################################

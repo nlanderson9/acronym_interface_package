@@ -214,7 +214,6 @@ align_epi_anat.py -epi2anat -anat anat_mprage_unif_ns_shft+orig  \
 	   -volreg off -tshift off						\
 	   -cost lpc+zz                                 \
 	   -giant_move                                  \
-	   -autoweight                                  \
 	   -master_epi MIN_DXYZ                         \
 	   -child_epi pb02.$subj.r02.tshift_shft+orig   \
 	   pb02.$subj.r03.tshift_shft+orig              \
@@ -229,7 +228,6 @@ align_epi_anat.py -epi2anat -anat anat_mprage_unif_ns_shft+orig  \
 	   -volreg off -tshift off						\
 	   -cost lpc+zz                                 \
 	   -giant_move                                  \
-	   -autoweight                                  \
 	   -master_epi MIN_DXYZ                         \
 	   -child_epi pb02.$subj.r06.tshift_shft+orig   \
 	   pb02.$subj.r07.tshift_shft+orig              \
