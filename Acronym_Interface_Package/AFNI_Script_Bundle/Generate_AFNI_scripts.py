@@ -1993,9 +1993,7 @@ if "t-test" in type_selection:
 		####################################################################################################
 		####################################################################################################
 		##### Prepping Script Text Blocks #####
-		set_A_block = '-mask %s                                                                         ' % group_mask
-		set_A_block = set_A_block + '                                      \\'
-		set_A_block = set_A_block + '-setA %s                                                                         ' % A_labelname
+		set_A_block = '-setA %s                                                                         ' % A_labelname
 		set_A_block = set_A_block + '                                      \\'
 		set_A_count = 1
 		for participant in participants:
@@ -2053,11 +2051,12 @@ if ( ! -d $results_dir ) mkdir $results_dir
 
 3dttest++ -prefix $results_dir/%s %s %s                                                                       \\
 		  -Clustsim                                                                                                               \\
+		  -mask %s																												  \\
 																																  \\
 		  %s
 		  %s
 
-''' % (script_name, script_name, subj_results_directory, dset_prefix, dset_prefix, contrast, paired_parameter, set_A_block, set_B_block))
+''' % (script_name, script_name, subj_results_directory, dset_prefix, dset_prefix, contrast, paired_parameter, group_mask, set_A_block, set_B_block))
 		textfile.close()
 		print("AFNI script generated: %s" % script_name)
 		print("\nRun command:\n tcsh -xef %s |& tee output.%s" % (script_name, script_name))
@@ -2222,11 +2221,7 @@ if ( ! -d $results_dir ) mkdir $results_dir
 				####################################################################################################
 				##### Prepping Script Text Blocks #####
 
-				set_A_block = '-mask %s                                                                         ' % group_mask
-				set_A_block = set_A_block + '                                      \\'
-				set_A_block = set_A_block + '-setA %s                                                                         ' % A_labelname
 				set_A_block = '-setA %s                                                                         ' % A_labelname
-				set_A_block = set_A_block + '                                      \\'
 				set_A_count = 1
 				for participant in participants:
 					set_A_block = set_A_block + '\n          %s' % set_A_count
@@ -2292,11 +2287,12 @@ if ( ! -d $results_dir ) mkdir $results_dir
 
 3dttest++ -prefix $results_dir/%s %s %s                                                                       \\
 		  -Clustsim                                                                                                               \\
+		  -mask %s                                                                                                                \\
 		                                                                                                                          \\
 		  %s
 		  %s
 
-''' % (dset_prefix, dset_prefix, contrast, paired_parameter, set_A_block, set_B_block))
+''' % (dset_prefix, dset_prefix, contrast, paired_parameter, group_mask, set_A_block, set_B_block))
 			textfile.close()
 		print("AFNI script generated: %s" % script_name)
 		print("\nRun command:\n tcsh -xef %s |& tee output.%s" % (script_name, script_name))
