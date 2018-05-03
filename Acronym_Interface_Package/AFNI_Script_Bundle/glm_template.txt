@@ -188,7 +188,7 @@ cd ..
 $$%%deconvolve_block%%$$
 -fout -tout -x1D $glm_dir/X.xmat.1D -xjpeg X.jpg                                  \
 -x1D_uncensored $glm_dir/X.nocensor.xmat.1D                                       \
--$glm_dir/fitts.$subj                                                       \
+-fitts $glm_dir/fitts.$subj                                                       \
 -errts $glm_dir/errts.${subj}                                                     \
 -bucket $glm_dir/stats.$subj
 

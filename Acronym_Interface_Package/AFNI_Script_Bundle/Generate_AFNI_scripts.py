@@ -1790,6 +1790,7 @@ if "t-test" in type_selection:
 		input_B_label = ttest_presets['B_label']
 		input_paired_ttest = ttest_presets['Paired_ttest']
 		input_contrast_against_baseline = ttest_presets['Contrast_against_baseline']
+		input_group_mask = ttest_presets['Group_mask']
 		
 		
 		dset_prefix = None
@@ -1803,11 +1804,12 @@ if "t-test" in type_selection:
 		B_label = None
 		paired_ttest = None
 		contrast_against_baseline = None
+		group_mask = None
 
 
 
 		def entry_fields():
-			global dset_prefix, subj_results_directory, participants, A_folder, A_labelname, A_label, B_folder, B_labelname, B_label
+			global dset_prefix, subj_results_directory, participants, A_folder, A_labelname, A_label, B_folder, B_labelname, B_label, group_mask
 			dset_prefix = e1.get()
 			subj_results_directory = e2.get()
 			participants = e3.get()
@@ -1817,6 +1819,7 @@ if "t-test" in type_selection:
 			B_folder = e7.get()
 			B_labelname = e8.get()
 			B_label = e9.get()
+			group_mask = e10.get()
 			master.destroy()
 
 		def sel():
@@ -1918,9 +1921,16 @@ if "t-test" in type_selection:
 
 		Label(master, text=" ").grid(row=19)
 
-		Button(master, text='Submit', command=entry_fields).grid(row=20, sticky=S,
+		Label(master, text="Path for the group mask [REQUIRED for t-tests]")
+		e10 = Entry(master, width=40)
+		e10.insert(0, input_group_mask)
+		e10.grid(row=20,column=1, sticky='w')
+
+		Label(master, text=" ").grid(row=21)
+
+		Button(master, text='Submit', command=entry_fields).grid(row=22, sticky=S,
 																 pady=4, columnspan=2)  # create a "Submit" button that triggers the above "entry_fields" function
-		Button(master, text='Cancel', command=exitscript).grid(row=21, sticky=S,
+		Button(master, text='Cancel', command=exitscript).grid(row=23, sticky=S,
 															   pady=4, columnspan=2)  # create a "Submit" button that triggers the above "entry_fields" function
 
 		master.update_idletasks()
@@ -1983,8 +1993,9 @@ if "t-test" in type_selection:
 		####################################################################################################
 		####################################################################################################
 		##### Prepping Script Text Blocks #####
-
-		set_A_block = '-setA %s                                                                         ' % A_labelname
+		set_A_block = '-mask %s                                                                         ' % group_mask
+		set_A_block = set_A_block + '                                      \\'
+		set_A_block = set_A_block + '-setA %s                                                                         ' % A_labelname
 		set_A_block = set_A_block + '                                      \\'
 		set_A_count = 1
 		for participant in participants:
@@ -2072,7 +2083,8 @@ if ( ! -d $results_dir ) mkdir $results_dir
 							'B_label:' + B_label,
 							'Paired_ttest:' + str(paired_ttest),
 							'Contrast_against_baseline:' + str(contrast_against_baseline),
-							'Auto_filename:' + ttest_presets['Auto_filename']]
+							'Auto_filename:' + ttest_presets['Auto_filename'],
+							'Group_mask:' + group_mask]
 
 		with open(ttest_presets_control_file, 'w') as control_file:
 			control_file.writelines('\n'.join(new_control_list))
@@ -2203,11 +2215,16 @@ if ( ! -d $results_dir ) mkdir $results_dir
 					if paired_ttest:
 						print("Warning - for %s you've declared this to be both a paired t-test and a test against baseline (which is unpaired). Assuming test against baseline and ignoring paired parameter." % dset_prefix)
 
+				group_mask = ttest['Group_mask']
+
 
 				####################################################################################################
 				####################################################################################################
 				##### Prepping Script Text Blocks #####
 
+				set_A_block = '-mask %s                                                                         ' % group_mask
+				set_A_block = set_A_block + '                                      \\'
+				set_A_block = set_A_block + '-setA %s                                                                         ' % A_labelname
 				set_A_block = '-setA %s                                                                         ' % A_labelname
 				set_A_block = set_A_block + '                                      \\'
 				set_A_count = 1
@@ -2303,7 +2320,8 @@ if ( ! -d $results_dir ) mkdir $results_dir
 							'B_label:' + ttest_presets['B_label'],
 							'Paired_ttest:' + ttest_presets['Paired_ttest'],
 							'Contrast_against_baseline:' + ttest_presets['Contrast_against_baseline'],
-							'Auto_filename:' + auto_filename]
+							'Auto_filename:' + auto_filename,
+							'Group_mask:' + ttest_presets['Group_mask']]
 
 		with open(ttest_presets_control_file, 'w') as control_file:
 			control_file.writelines('\n'.join(new_control_list))

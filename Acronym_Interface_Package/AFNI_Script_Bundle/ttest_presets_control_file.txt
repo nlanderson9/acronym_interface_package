@@ -10,3 +10,4 @@ B_label:Retrieval_BothShort_Hit#0_Coef
 Paired_ttest:True
 Contrast_against_baseline:False
 Auto_filename:master_ttest_1
+Group_mask:/Volumes/Pegasus/Anderson/ERwD/erwd_group_mask+tlrc
