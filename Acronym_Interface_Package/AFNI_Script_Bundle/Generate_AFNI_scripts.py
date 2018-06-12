@@ -844,8 +844,9 @@ if "GLM" in type_selection:
 		if choice_gam_tent == "Tent":
 			iresp_counter = 1
 			for item in range(len(fixed_stim_files)):
-				deconvolve_block = deconvolve_block + "-iresp %s $glm_dir/iresp_$stim_%s.$subj												\\\n" % (
+				deconvolve_block = deconvolve_block + "-iresp %s $glm_dir/iresp_$stim_label_%s.$subj												\\\n" % (
 					iresp_counter, iresp_counter)
+				iresp_counter += 1
 
 		deconvolve_glt_counter = 1
 		for item in range(len(new_glts)):
@@ -1600,8 +1601,9 @@ if "GLM" in type_selection:
 		####################################################################################################
 		##### GUI Window: GLTs (contrasts in AFNI) #####
 
+		glt_names = []
+
 		if len(new_glts) > 0:
-			glt_names = []
 
 			glt_names_entries = {}
 			glt_names_entries_outcome = {}
@@ -2051,7 +2053,7 @@ if ( ! -d $results_dir ) mkdir $results_dir
 
 3dttest++ -prefix $results_dir/%s %s %s                                                                       \\
 		  -Clustsim                                                                                                               \\
-		  -mask %s																												  \\
+		  -mask %s																							  \\
 																																  \\
 		  %s
 		  %s
@@ -2222,6 +2224,7 @@ if ( ! -d $results_dir ) mkdir $results_dir
 				##### Prepping Script Text Blocks #####
 
 				set_A_block = '-setA %s                                                                         ' % A_labelname
+				set_A_block = set_A_block + '                                      \\'
 				set_A_count = 1
 				for participant in participants:
 					set_A_block = set_A_block + '\n          %s' % set_A_count
