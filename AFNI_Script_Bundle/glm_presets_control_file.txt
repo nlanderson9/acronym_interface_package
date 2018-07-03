@@ -1,0 +1,14 @@
+script_prefix:my_project
+participant_list:(my_project001 my_project002 my_project003)
+GLM_name:this_GLM
+initial_directory:/my/stuff/my_project
+number_runs:9
+number_TRs:314
+TR_length:1.1
+onsets_folder:onsets/
+number_timing_files:4
+trial_covariate:Yes
+input_timing_file_01:"$subj"_Hit.txt
+input_timing_file_02:"$subj"_Miss.txt
+input_timing_file_03:"$subj"_CR.txt
+input_timing_file_04:"$subj"_FA.txt

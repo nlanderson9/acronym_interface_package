@@ -1,0 +1,16 @@
+project_name:NP1000
+number_of_sessions:2
+id_prefix:my_project
+task_code:My_Project
+folder:/my/stuff/my_project
+icarus_folder:/data/nil-external/mcl/me/
+raw_behavioral_folder:/my/stuff/my_project/behavioral_data
+CNDA_auto:True
+use_participant_spreadsheet:True
+participant_spreadsheet:/my/stuff/my_project/participant_spreadsheet.csv
+CNDA_login:me
+CNDA_password:my_password
+icarus_login:me
+icarus_password:my_other_password
+show_notifications:True
+password_save:True

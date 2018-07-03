@@ -1,0 +1,13 @@
+Dset_prefix:My_ttest
+Subj_results_directory:my/stuff/my_project/subject_results
+Participants:my_project001 my_project002 my_project003
+A_folder:Folder1
+A_labelname:Condition1
+A_label:Folder1_Condition1#0_Coef
+B_folder: Folder1
+B_labelname: Condition2
+B_label: Folder1_Condition2#0_Coef
+Paired_ttest:True
+Contrast_against_baseline:False
+Auto_filename:master_ttest_1
+Group_mask:my/stuff/my_project/my_group_mask+tlrc

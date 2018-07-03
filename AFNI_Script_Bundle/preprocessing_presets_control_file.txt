@@ -1,0 +1,19 @@
+script_prefix:my_project
+initial_directory:my/stuff/my_project
+MNI_template_path:/users/memorycognition/abin/MNI152_T1_2009c+tlrc
+participant_list:(my_project001 my_project002 my_project003)
+number_runs:9
+number_TRs:314
+TR_length:1.1
+lengths_equal:Yes
+TR_list:( 314 314 314 314 314 314 314 314 314 )
+anatomy:$input_dir/anat/"$subj"_T1w.nii.gz
+input_run_01:$input_dir/func/Run01_"$subj"Encoding1.nii
+input_run_02:$input_dir/func/Run02_"$subj"Retrieval1a.nii
+input_run_03:$input_dir/func/Run03_"$subj"Retrieval1b.nii
+input_run_04:$input_dir/func/Run04_"$subj"Encoding2.nii
+input_run_05:$input_dir/func/Run05_"$subj"Retrieval2a.nii
+input_run_06:$input_dir/func/Run06_"$subj"Retrieval2b.nii
+input_run_07:$input_dir/func/Run07_"$subj"Encoding3.nii
+input_run_08:$input_dir/func/Run08_"$subj"Retrieval3a.nii
+input_run_09:$input_dir/func/Run09_"$subj"Retrieval3b.nii

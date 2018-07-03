@@ -1,0 +1,4 @@
+subject_results_path:/my/folder/subject_results
+masks_path:my/folder/ROI_masks
+coord_system:LPI
+sphere_radius:5

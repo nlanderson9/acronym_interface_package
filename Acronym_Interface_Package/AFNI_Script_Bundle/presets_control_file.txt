@@ -1,5 +1,0 @@
-backup_path:/data/nil-external/mcl/Anderson/NP1029_backup/ERwD_Scripts
-output_path:/users/nathananderson/Documents/Nate/Memory_and_Cognition_Lab/Generated_Scripts
-icarus_login:andersonn
-icarus_password:@99Mnemosyne
-password_save:True
