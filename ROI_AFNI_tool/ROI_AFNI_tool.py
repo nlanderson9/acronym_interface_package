@@ -110,8 +110,8 @@ mainloop()
 # Select analyses
 ####################
 
-analysis_choices = ['5mm radius sphere (magnitude)',
-					'5mm radius sphere (timecourse)',
+analysis_choices = ['Sphere from coordinate (magnitude)',
+					'Sphere from coordinate (timecourse)',
 					'Pre-defined mask (magnitude)',
 					'Pre-defined mask (timecourse)']
 
@@ -1130,6 +1130,7 @@ for method in analyses:
 				if method_ROI == "spherical":
 					for spherical_ROI_coord in coord_list:
 						spherical_ROI_name = spherical_ROI_coord[:-4] # remove ".txt" at the end of the file name
+						print(spherical_ROI_name)
 
 						# create spherical ROIs
 						# print("cd %s && 3dUndump -prefix temp_%s_mask_%s -master %s -srad %s -xyz temp_%s" % (GLM_folder_path, spherical_ROI_name, condition_name, use_file, sphere_radius, spherical_ROI_coord))
@@ -1140,10 +1141,11 @@ for method in analyses:
 							subprocess.call("cd %s && 3dmaskave -mask temp_%s_mask_%s+tlrc '%s[%s]' > %s.ave.%s.%s.txt" % (GLM_folder_path, spherical_ROI_name, condition_name, use_file, condition, spherical_ROI_name, subj_number, condition_name), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 						elif method_type == "timecourses":
 							# print("cd %s && 3dmaskave -mask temp_%s_mask_%s+tlrc %s > %s.ave.%s.txt" % (GLM_folder_path, spherical_ROI_name, condition_name, use_file, spherical_ROI_name, condition_name))
-							subprocess.call("cd %s && 3dmaskave -mask temp_%s_mask_%s+tlrc %s > %s.ave.%s.txt" % (GLM_folder_path, spherical_ROI_name, condition_name, use_file, spherical_ROI_name, condition_name), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+							subprocess.call("cd %s && 3dmaskave -mask temp_%s_mask_%s+tlrc %s > %s.ave.%s.%s.txt" % (GLM_folder_path, spherical_ROI_name, condition_name, use_file, spherical_ROI_name, subj_number, condition_name), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 				elif method_ROI == "predefined_mask":
 					for Predef_ROI_mask in mask_list:
 						Predef_ROI_name = Predef_ROI_mask[:-5] # remove ".HEAD" at the end of the file name
+						print(Predef_ROI_name[:-5])
 						
 						# average across voxels within predefined ROI
 						if method_type == "magnitudes":
@@ -1151,7 +1153,7 @@ for method in analyses:
 							subprocess.call("cd %s && 3dmaskave -mask temp_%s '%s[%s]' > %s.ave.%s.%s.txt" % (GLM_folder_path, Predef_ROI_name, stats_file[:-5], condition, Predef_ROI_name, subj_number, condition_name), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 						elif method_type == "timecourses":
 							# print("cd %s && 3dmaskave -mask temp_%s %s > %s.ave.%s.txt" % (GLM_folder_path, Predef_ROI_name, use_file, Predef_ROI_name, condition_name))
-							subprocess.call("cd %s && 3dmaskave -mask temp_%s %s > %s.ave.%s.txt" % (GLM_folder_path, Predef_ROI_name, use_file, Predef_ROI_name, condition_name), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+							subprocess.call("cd %s && 3dmaskave -mask temp_%s %s > %s.ave.%s.%s.txt" % (GLM_folder_path, Predef_ROI_name, use_file, Predef_ROI_name, subj_number, condition_name), shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 				# relocate output ROI averages
 				average_file = os.path.join(GLM_folder_path, "*ave*txt")
 				subprocess.call("mv %s %s" % (average_file, average_folder), shell=True)
@@ -1174,53 +1176,49 @@ for method in analyses:
 	master_list = {}
 	for folder in all_GLM_condition_pairs:
 		for condition in all_GLM_condition_pairs[folder]:
-			print("\n" + folder+" : "+condition)
-			all_conditions = []
+			print("\n" + folder + " : " + condition)
 			for ROI in ROI_list:
-				ROI_name = ROI[:-4]
+				if method_ROI == "spherical":
+					ROI_name = ROI[:-4]
+				elif method_ROI == "predefined_mask":
+					ROI_name = ROI[:-10]
 				ROI_conditions = glob.glob(os.path.join(subject_results, "*", "*", folder, "%s_ROI_averages_%s" % (method_ROI, method_type), "%s*%s.txt" % (ROI_name, condition)))
-				all_conditions = all_conditions + ROI_conditions
 
-			all_conditions = sorted(all_conditions)
-			count = 0
+				ROI_conditions = sorted(ROI_conditions)
 
-			for subject in all_conditions:
-				subject_number = subject.split(os.path.join(subject_results, "subj."))
-				subject_number = subject_number[1].split("/")
-				subject_number = subject_number[0]
+				count = 0
 
-				for ROI in ROI_list:
-					if method_ROI == "spherical":
-						ROI_name = ROI[:-4]
-					elif method_ROI == "predefined_mask":
-						ROI_name = ROI[:-10]
+				for subject in ROI_conditions:
+					subject_number = subject.split(os.path.join(subject_results, "subj."))
+					subject_number = subject_number[1].split("/")
+					subject_number = subject_number[0]
 
-				count = count + 1
+					count = count + 1
 
-				with open(subject, 'r') as in_file:
-					lines1=[]
-					for line in in_file:
-						newlines = line.split(" ")
-						lines1.append(newlines[0])
-					if method_type == "magnitudes":
-						act_data = float(lines1[0])
-					elif method_type == "timecourses":
-						act_data = []
-						for item in lines1:
-							act_data.append(float(item))
-					key_name = ROI_name + "_" + condition
-					if key_name in master_list:
+					with open(subject, 'r') as in_file:
+						lines1=[]
+						for line in in_file:
+							newlines = line.split(" ")
+							lines1.append(newlines[0])
 						if method_type == "magnitudes":
-							master_list[key_name] = master_list[key_name] + act_data
+							act_data = float(lines1[0])
 						elif method_type == "timecourses":
-							master_list[key_name] = map(add, master_list[key_name], act_data)
-						master_list[key_name + "_count"] = master_list[key_name + "_count"] + 1
-						master_list[key_name + "_sem"].append(act_data)
-					else:
-						master_list[key_name] = act_data
-						master_list[key_name + "_count"] = 1
-						master_list[key_name + "_sem"] = [act_data]
-			avg_count = avg_count + 1
+							act_data = []
+							for item in lines1:
+								act_data.append(float(item))
+						key_name = ROI_name + "_" + condition
+						if key_name in master_list:
+							if method_type == "magnitudes":
+								master_list[key_name] = master_list[key_name] + act_data
+							elif method_type == "timecourses":
+								master_list[key_name] = map(add, master_list[key_name], act_data)
+							master_list[key_name + "_count"] = master_list[key_name + "_count"] + 1
+							master_list[key_name + "_sem"].append(act_data)
+						else:
+							master_list[key_name] = act_data
+							master_list[key_name + "_count"] = 1
+							master_list[key_name + "_sem"] = [act_data]
+				avg_count = avg_count + 1
 
 	if method_type == "timecourses":
 		timepoint_number = None
