@@ -141,7 +141,7 @@ def main():
 			keepafni_string = command[9:]
 			if keepnifti_string == 'true':
 				keepafni = True
-			elif keepafni_string = 'false':
+			elif keepafni_string == 'false':
 				keepafni = False
 			else:
 				keepafni = keepafni_string
