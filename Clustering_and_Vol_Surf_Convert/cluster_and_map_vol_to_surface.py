@@ -61,8 +61,11 @@ def main():
 			  "*Optional:\n\n"
 			  "   loop		= loop through all applicable files in the current directory - valid options are 'true' or 'false'. Default is 'false'.\n"
 		      "		  Note: if loop=true, a filename does not need to be provided (and if provided, it will be ignored)\n\n"
-			  "   suffix	= a unique suffix to be added to the end of your output file(s)."
-			  "   keepnifti 	= when converting volume to surface, determines if the intermediate NIfTI file is kept or deleted - valid options are 'true' or 'false'. Default is 'false'."
+			  "   suffix	= a unique suffix to be added to the end of your output file(s).\n\n"
+			  "   keepnifti 	= when converting volume to surface, determines if the intermediate NIfTI file is kept or deleted - valid options are 'true' or 'false'.\n"
+			  "		  Default is 'false'.\n\n"
+			  "   keepafni     = when performing cluster correction, determines if the intermediate AFNI file is kept (the original data, with voxels outside surviving clusters removed).\n"
+			  "		  Valid options are 'true' or 'false'. Default is 'false'.\n\n\n"
 			  "All arguments must be provided in the form arg=value (e.g. NN=1 or bisided=false). Filename may be included without 'filename='. Any order is permitted.\n")
 		sys.exit()
 	if len(sys.argv) > 1:
@@ -77,6 +80,7 @@ def main():
 	loop = False
 	suffix = ''
 	keepnifti = False
+	keepafni = False
 
 	for command in commands:
 		if "p=" in command and "loop" not in command:
@@ -133,6 +137,14 @@ def main():
 				keepnifti = False
 			else:
 				keepnifti = keepnifti_string
+		if "keepafni=" in command:
+			keepafni_string = command[9:]
+			if keepnifti_string == 'true':
+				keepafni = True
+			elif keepafni_string = 'false':
+				keepafni = False
+			else:
+				keepafni = keepafni_string
 		if any(x in command for x in ['.HEAD', '.BRIK']) or os.path.exists(
 				thisdir + "/" + command + ".HEAD") or os.path.exists(thisdir + "/" + command[9:] + ".HEAD"):
 			if command.startswith('filename='):
@@ -176,6 +188,8 @@ def main():
 			sys.exit("Please provide a valid option for the argument 'loop'")
 	if not any(x == keepnifti for x in [True, False]):
 		sys.exit("Please provide a valid option for the argument 'keepnifti'")
+	if not any(x == keepafni for x in [True, False]):
+		sys.exit("Please provide a valid option for the argument 'keepafni'")
 	if len(commands) > 0:
 		if not loop:
 			if filename:
@@ -331,10 +345,11 @@ def main():
 			os.remove(thisdir + "/Clust_mask+tlrc.BRIK.gz")
 
 		# Delete intermediate AFNI files
-		if os.path.exists(thisdir + "/%s_Clust%s+tlrc.HEAD" % (filename[:-5], suffix)):
-			os.remove(thisdir + "/%s_Clust%s+tlrc.HEAD" % (filename[:-5], suffix))
-		if os.path.exists(thisdir + "/%s_Clust%s+tlrc.BRIK.gz" % (filename[:-5], suffix)):
-			os.remove(thisdir + "/%s_Clust%s+tlrc.BRIK.gz" % (filename[:-5], suffix))
+		if not keepafni:
+			if os.path.exists(thisdir + "/%s_Clust%s+tlrc.HEAD" % (filename[:-5], suffix)):
+				os.remove(thisdir + "/%s_Clust%s+tlrc.HEAD" % (filename[:-5], suffix))
+			if os.path.exists(thisdir + "/%s_Clust%s+tlrc.BRIK.gz" % (filename[:-5], suffix)):
+				os.remove(thisdir + "/%s_Clust%s+tlrc.BRIK.gz" % (filename[:-5], suffix))
 
 
 

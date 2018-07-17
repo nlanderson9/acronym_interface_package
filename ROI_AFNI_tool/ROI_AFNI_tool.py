@@ -1273,12 +1273,7 @@ for method in analyses:
 	if method_type == "magnitudes":
 		headers = ["activation", "subj_count", "average", "sem"]
 	elif method_type == "timecourses":
-		headers = ['timepoint']
-		for item in ordered_list:
-				if "count" not in item and "sem" not in item:
-					headers.append(item + "_subj_count")
-					headers.append(item + "_average")
-					headers.append(item + "_sem")
+		headers = ["timepoint", "activation", "subj_count", "average", "sem"]
 			
 	with open(master_file_path, 'w') as master_file:
 		writer = csv.writer(master_file)
@@ -1291,9 +1286,9 @@ for method in analyses:
 		intermediate_list = {}
 		for i in range(0, timepoint_number):
 			for item in ordered_list:
-					intermediate_list[item + "_subj_count_" + str(i+1)] = master_list[item + "_count"]
-					intermediate_list[item + "_average_" + str(i+1)] = master_list[item][i]
-					intermediate_list[item + "_sem_" + str(i+1)] = master_list[item + "_sem"][i]
+				intermediate_list[item + "_subj_count_" + str(i+1)] = master_list[item + "_count"]
+				intermediate_list[item + "_average_" + str(i+1)] = master_list[item][i]
+				intermediate_list[item + "_sem_" + str(i+1)] = master_list[item + "_sem"][i]
 
 		master_list = intermediate_list
 
@@ -1304,15 +1299,16 @@ for method in analyses:
 					writer = csv.writer(master_file)
 					writer.writerow([item, master_list[item + "_count"], master_list[item], master_list[item + "_sem"]])
 	elif method_type == "timecourses":
-		for i in range(1, timepoint_number + 1):
+		for item in ordered_list:
 			with open(master_file_path, 'a') as master_file:
 				writer = csv.writer(master_file)
-				write_list = [str(i)]
-				for item in ordered_list:
+				for i in range(1, timepoint_number + 1):
+					write_list = [str(i)]
+					write_list.append(item)
 					write_list.append(master_list[item+ "_subj_count_" + str(i)])
 					write_list.append(master_list[item+ "_average_" + str(i)])
 					write_list.append(master_list[item+ "_sem_" + str(i)])
-				writer.writerow(write_list)
+					writer.writerow(write_list)
 
 
 
